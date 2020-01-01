@@ -4,7 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"fmt"
-	chrome "go.ajitem.com/gcf"
+	chrome "go.ajitem.com/gcf/v2"
 	"image/png"
 	"log"
 	"net/http"
@@ -26,15 +26,15 @@ func NewOpts(r *http.Request) *Opts {
 
 	o.Url = r.URL.Query().Get("url")
 
-	if val, err := strconv.Atoi(r.URL.Query().Get("height")); err != nil {
+	if val, err := strconv.Atoi(r.URL.Query().Get("height")); err == nil {
 		o.Height = val
 	}
 
-	if val, err := strconv.Atoi(r.URL.Query().Get("width")); err != nil {
+	if val, err := strconv.Atoi(r.URL.Query().Get("width")); err == nil {
 		o.Width = val
 	}
 
-	if val, err := strconv.Atoi(r.URL.Query().Get("delay")); err != nil {
+	if val, err := strconv.Atoi(r.URL.Query().Get("delay")); err == nil {
 		o.Delay = time.Duration(val) * time.Millisecond
 	}
 
@@ -45,7 +45,6 @@ type Screenshot struct {
 	Path    string
 	Port    int
 	Browser chrome.Browser
-	Tab     chrome.BrowserTab
 	Width   int
 	Height  int
 }
@@ -65,7 +64,7 @@ func NewScreenshot(path string, port int) *Screenshot {
 }
 
 func (s *Screenshot) launch() (err error) {
-	s.Tab, err = s.Browser.Launch(
+	_, err = s.Browser.Launch(
 		s.Path,
 		chrome.Int(s.Port),
 		chrome.StringSlice([]string{}),
@@ -85,14 +84,19 @@ func (s *Screenshot) getScreenshots(opts *Opts) ([]byte, error) {
 		opts.Width = s.Width
 	}
 
-	_, err := s.Tab.Navigate(opts.Url, 120*time.Second)
+	tab, err := s.Browser.OpenNewTab(120 * time.Second)
+	if err != nil {
+		return nil, err
+	}
+
+	_, err = tab.Navigate(opts.Url, 120*time.Second)
 	if err != nil {
 		return nil, err
 	}
 
 	time.Sleep(opts.Delay)
 
-	screenshot, err := s.Tab.CaptureScreenshot(120 * time.Second)
+	screenshot, err := tab.CaptureScreenshot(chrome.ScreenshotOpts{Width: opts.Width, Height: opts.Height}, 120*time.Second)
 	if err != nil {
 		return nil, err
 	}
@@ -110,6 +114,11 @@ func (s *Screenshot) getScreenshots(opts *Opts) ([]byte, error) {
 	var buf bytes.Buffer
 
 	err = png.Encode(&buf, image)
+	if err != nil {
+		return nil, err
+	}
+
+	err = s.Browser.CloseTab(tab, 120*time.Second)
 	if err != nil {
 		return nil, err
 	}

@@ -1,6 +1,14 @@
+github.com/google/go-cmp v0.3.1 h1:Xye71clBPdm5HgqGwUkwhbynsUJZhDbS20FvLhQ2izg=
+github.com/google/go-cmp v0.3.1/go.mod h1:8QqcDgzrUqlUb/G2PQTWiueGozuR1884gddMywk6iLU=
 github.com/gorilla/websocket v1.4.0 h1:WDFjx/TMzVgy9VdMMQi2K2Emtwi2QcUQsztZ/zLaH/Q=
 github.com/gorilla/websocket v1.4.0/go.mod h1:E7qHFY5m1UJ88s3WnNqhKjPHQ0heANvMoAMk2YaljkQ=
+github.com/gorilla/websocket v1.4.1 h1:q7AeDBpnBk8AogcD4DSag/Ukw/KV+YhzLj2bP5HvKCM=
+github.com/gorilla/websocket v1.4.1/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
 github.com/mafredri/cdp v0.23.4 h1:ffp4qq6slfCL4rFWBDeRHapkLE776gER4tX5Z3LS8CY=
 github.com/mafredri/cdp v0.23.4/go.mod h1:hgdiA0yp1uqhSaDOHJWPgXpMbh+LAfUdD9vbN2AM8gE=
-go.ajitem.com/gcf v1.0.0 h1:t5TdnEpYG+bd2LuFlajQpG/IwleQBfVtAOCL40VOVpQ=
-go.ajitem.com/gcf v1.0.0/go.mod h1:ek4M0dKpf4WkQXiHaT5+xpzpgua82UdbbfM5XR6NSuk=
+github.com/mafredri/cdp v0.25.0 h1:nXhdpjP8Nrhw+9jnMlljEF6xs2B3vXI/wSiKDOvOXGs=
+github.com/mafredri/cdp v0.25.0/go.mod h1:hgdiA0yp1uqhSaDOHJWPgXpMbh+LAfUdD9vbN2AM8gE=
+go.ajitem.com/gcf/v2 v2.0.1 h1:Wd3QNQCWchNWYlpjayiQRwQvL0Azx6jGnLiA1YHdyiY=
+go.ajitem.com/gcf/v2 v2.0.1/go.mod h1:84i/JULAXZaBNTJLiyVW2UHc2o6I4u2lrof0ki6/+wI=
+golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e h1:vcxGaoTs7kV8m5Np9uUNQin4BrLOthgV7252N8V+FwY=
+golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e/go.mod h1:RxMgew5VJxzue5/jJTE5uejpjVlOe/izrB70Jof72aM=
