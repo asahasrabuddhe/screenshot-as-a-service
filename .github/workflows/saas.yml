@@ -8,7 +8,6 @@ on:
 jobs:
   builddocker:
     name: Build Docker
-    id: docker
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
