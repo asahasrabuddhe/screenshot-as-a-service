@@ -23,6 +23,7 @@ type Opts struct {
 	Height    int
 	Delay     time.Duration
 	UserAgent string
+	FullPage  bool
 }
 
 func NewOpts(r *http.Request) *Opts {
@@ -43,6 +44,10 @@ func NewOpts(r *http.Request) *Opts {
 	}
 
 	o.UserAgent = r.URL.Query().Get("useragent")
+
+	if r.URL.Query().Get("fullpage") == "true" {
+		o.FullPage = true
+	}
 
 	return o
 }
@@ -81,9 +86,40 @@ func (s *Screenshot) launch() (err error) {
 	return
 }
 
-func (s *Screenshot) getScreenshots(opts *Opts) ([]byte, error) {
+func (s *Screenshot) Terminate() error {
+	return s.Browser.Terminate()
+}
+
+func (s *Screenshot) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	if r.URL.Path == "/" {
+		opts := NewOpts(r)
+
+		screenshot, err := s.getScreenshot(opts)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(err.Error()))
+			return
+		}
+
+		w.WriteHeader(200)
+		_, _ = w.Write(screenshot)
+	} else {
+		w.WriteHeader(404)
+	}
+}
+
+func (s *Screenshot) getScreenshot(opts *Opts) ([]byte, error) {
 	if opts.Height == 0 {
 		opts.Height = s.Height
+	}
+
+	if opts.FullPage {
+		opts.Height = 0
 	}
 
 	if opts.Width == 0 {
@@ -135,24 +171,30 @@ func (s *Screenshot) getScreenshots(opts *Opts) ([]byte, error) {
 		return nil, err
 	}
 
+	log.Println(s.getLogLine(opts))
+
 	return buf.Bytes(), nil
 }
 
-func (s *Screenshot) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodGet {
-		w.WriteHeader(http.StatusMethodNotAllowed)
-		return
+func (s *Screenshot) getLogLine(opts *Opts) string {
+	var builder strings.Builder
+
+	builder.WriteString(fmt.Sprint("captured screenshot for :: "))
+	builder.WriteString(fmt.Sprintf("url: %s ", opts.Url))
+	builder.WriteString(fmt.Sprintf("width: %d ", opts.Width))
+	builder.WriteString(fmt.Sprintf("height: %d ", opts.Height))
+
+	if opts.FullPage {
+		builder.WriteString(fmt.Sprintf("[full page screenshot] "))
 	}
 
-	opts := NewOpts(r)
-
-	screenshot, err := s.getScreenshots(opts)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
-		_, _ = w.Write([]byte(err.Error()))
-		return
+	if opts.Delay > 0 {
+		builder.WriteString(fmt.Sprintf("delay: %s ", opts.Delay))
 	}
 
-	w.WriteHeader(200)
-	_, _ = w.Write(screenshot)
+	if opts.UserAgent != "" {
+		builder.WriteString(fmt.Sprintf("useragent: %s\n", opts.UserAgent))
+	}
+
+	return builder.String()
 }
