@@ -70,6 +70,8 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ github.ref }}
+          body: |
+            Docker Image: docker pull ajitemsahasrabuddhe/screenshot-as-a-service:${{ steps.extract_version.outputs.VERSION }}
           draft: false
           prerelease: false
 
@@ -89,8 +91,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./screenshot-as-a-service_darwin_amd64_${{ steps.extract_version.outputs.VERSION }}.tar.gz
-          asset_name: screenshot-as-a-service_darwin_amd64_${{ steps.extract_version.outputs.VERSION }}.tar.gz
+          asset_path: ./screenshot-as-a-service_macos_amd64_${{ steps.extract_version.outputs.VERSION }}.tar.gz
+          asset_name: screenshot-as-a-service_macos_amd64_${{ steps.extract_version.outputs.VERSION }}.tar.gz
           asset_content_type: application/tar+gzip
 
       - name: Upload Windows Asset
