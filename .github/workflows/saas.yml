@@ -20,10 +20,8 @@ jobs:
         run: echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/}
 
       - name: Build Image
-        id: build_image
         run: |
           docker build -t ajitemsahasrabuddhe/screenshot-as-a-service:${{ steps.extract_version.outputs.VERSION }} -t ajitemsahasrabuddhe/screenshot-as-a-service:latest .
-          echo ::set-output name=DOCKER_COMMAND::docker pull ajitemsahasrabuddhe/screenshot-as-a-service:${{ steps.extract_version.outputs.VERSION }}
 
       - name: Push Image
         run: |
@@ -40,6 +38,10 @@ jobs:
         with:
           ref: ${{ github.ref }}
 
+      - name: Extract Version
+        id: extract_version
+        run: echo ::set-output name=VERSION::${GITHUB_REF#refs/tags/}
+
       - name: Setup Go
         uses: actions/setup-go@v1
         with:
@@ -53,12 +55,12 @@ jobs:
 
       - name: Build Binary
         run: |
-          GOOS=linux go build -o server -ldflags="-s -w -X 'main.Version=${{ jobs.builddocker.steps.extract_version.outputs.VERSION }}'" cmd/screenshot-as-a-service/main.go
-          tar -czvf screenshot-as-a-service_linux_amd64_${{ jobs.builddocker.steps.extract_version.outputs.VERSION }}.tar.gz server
-          GOOS=darwin go build -o server -ldflags="-s -w -X 'main.Version=${{ jobs.builddocker.steps.extract_version.outputs.VERSION }}'" cmd/screenshot-as-a-service/main.go
-          tar -czvf screenshot-as-a-service_macos_amd64_${{ jobs.builddocker.steps.extract_version.outputs.VERSION }}.tar.gz server
-          GOOS=windows go build -o server.exe -ldflags="-s -w -X 'main.Version=${{ jobs.builddocker.steps.extract_version.outputs.VERSION }}'" cmd/screenshot-as-a-service/main.go
-          tar -czvf screenshot-as-a-service_windows_amd64_${{ jobs.builddocker.steps.extract_version.outputs.VERSION }}.tar.gz server.exe
+          GOOS=linux go build -o server -ldflags="-s -w -X 'main.Version=${{ steps.extract_version.outputs.VERSION }}'" cmd/screenshot-as-a-service/main.go
+          tar -czvf screenshot-as-a-service_linux_amd64_${{ steps.extract_version.outputs.VERSION }}.tar.gz server
+          GOOS=darwin go build -o server -ldflags="-s -w -X 'main.Version=${{ steps.extract_version.outputs.VERSION }}'" cmd/screenshot-as-a-service/main.go
+          tar -czvf screenshot-as-a-service_macos_amd64_${{ steps.extract_version.outputs.VERSION }}.tar.gz server
+          GOOS=windows go build -o server.exe -ldflags="-s -w -X 'main.Version=${{ steps.extract_version.outputs.VERSION }}'" cmd/screenshot-as-a-service/main.go
+          tar -czvf screenshot-as-a-service_windows_amd64_${{ steps.extract_version.outputs.VERSION }}.tar.gz server.exe
 
       - name: Create Release
         id: create_release
@@ -77,8 +79,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./screenshot-as-a-service_linux_amd64_${{ jobs.builddocker.steps.extract_version.outputs.VERSION }}.tar.gz
-          asset_name: screenshot-as-a-service_linux_amd64_${{ jobs.builddocker.steps.extract_version.outputs.VERSION }}.tar.gz
+          asset_path: ./screenshot-as-a-service_linux_amd64_${{ steps.extract_version.outputs.VERSION }}.tar.gz
+          asset_name: screenshot-as-a-service_linux_amd64_${{ steps.extract_version.outputs.VERSION }}.tar.gz
           asset_content_type: application/tar+gzip
 
       - name: Upload MacOS Asset
@@ -87,8 +89,8 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./screenshot-as-a-service_darwin_amd64_${{ jobs.builddocker.steps.extract_version.outputs.VERSION }}.tar.gz
-          asset_name: screenshot-as-a-service_darwin_amd64_${{ jobs.builddocker.steps.extract_version.outputs.VERSION }}.tar.gz
+          asset_path: ./screenshot-as-a-service_darwin_amd64_${{ steps.extract_version.outputs.VERSION }}.tar.gz
+          asset_name: screenshot-as-a-service_darwin_amd64_${{ steps.extract_version.outputs.VERSION }}.tar.gz
           asset_content_type: application/tar+gzip
 
       - name: Upload Windows Asset
@@ -97,6 +99,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./screenshot-as-a-service_windows_amd64_${{ jobs.builddocker.steps.extract_version.outputs.VERSION }}.tar.gz
-          asset_name: screenshot-as-a-service_windows_amd64_${{ jobs.builddocker.steps.extract_version.outputs.VERSION }}.tar.gz
+          asset_path: ./screenshot-as-a-service_windows_amd64_${{ steps.extract_version.outputs.VERSION }}.tar.gz
+          asset_name: screenshot-as-a-service_windows_amd64_${{ steps.extract_version.outputs.VERSION }}.tar.gz
           asset_content_type: application/tar+gzip
