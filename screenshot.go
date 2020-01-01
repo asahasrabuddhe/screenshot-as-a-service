@@ -2,8 +2,11 @@ package screenshot
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"fmt"
+	"github.com/mafredri/cdp"
+	"github.com/mafredri/cdp/protocol/emulation"
 	chrome "go.ajitem.com/gcf/v2"
 	"image/png"
 	"log"
@@ -15,10 +18,11 @@ import (
 
 //TODO: Useragent, clipping, HTTP Basic Auth, Callback
 type Opts struct {
-	Url    string
-	Width  int
-	Height int
-	Delay  time.Duration
+	Url       string
+	Width     int
+	Height    int
+	Delay     time.Duration
+	UserAgent string
 }
 
 func NewOpts(r *http.Request) *Opts {
@@ -37,6 +41,8 @@ func NewOpts(r *http.Request) *Opts {
 	if val, err := strconv.Atoi(r.URL.Query().Get("delay")); err == nil {
 		o.Delay = time.Duration(val) * time.Millisecond
 	}
+
+	o.UserAgent = r.URL.Query().Get("useragent")
 
 	return o
 }
@@ -87,6 +93,12 @@ func (s *Screenshot) getScreenshots(opts *Opts) ([]byte, error) {
 	tab, err := s.Browser.OpenNewTab(120 * time.Second)
 	if err != nil {
 		return nil, err
+	}
+
+	if opts.UserAgent != "" {
+		tab.AttachHook(func(c *cdp.Client) error {
+			return c.Emulation.SetUserAgentOverride(context.Background(), emulation.NewSetUserAgentOverrideArgs(opts.UserAgent))
+		})
 	}
 
 	_, err = tab.Navigate(opts.Url, 120*time.Second)
