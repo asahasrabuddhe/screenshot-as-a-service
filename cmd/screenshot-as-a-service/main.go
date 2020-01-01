@@ -40,7 +40,7 @@ func main() {
 		},
 		&cli.StringFlag{
 			Name:    "address",
-			Aliases: nil,
+			Aliases: []string{"a"},
 			Value:   "",
 			Usage:   "Broadcast address for the server",
 		},
@@ -63,6 +63,7 @@ func main() {
 func Action(context *cli.Context) error {
 	path := context.Path("c")
 	devToolsPort := context.Int("d")
+	address := context.String("a")
 	port := context.Int("p")
 
 	s := screenshot.NewScreenshot(path, devToolsPort)
@@ -82,5 +83,6 @@ func Action(context *cli.Context) error {
 	}()
 
 	http.Handle("/", s)
-	return http.ListenAndServe(fmt.Sprintf(":%d", port), nil)
+	log.Printf("listening on %s:%d\n", address, port)
+	return http.ListenAndServe(fmt.Sprintf("%s:%d", address, port), nil)
 }
