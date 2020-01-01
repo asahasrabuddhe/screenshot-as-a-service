@@ -70,8 +70,6 @@ jobs:
         with:
           tag_name: ${{ github.ref }}
           release_name: Release ${{ github.ref }}
-          body: |
-            Docker Image: docker pull ajitemsahasrabuddhe/screenshot-as-a-service:${{ steps.extract_version.outputs.VERSION }}
           draft: false
           prerelease: false
 
