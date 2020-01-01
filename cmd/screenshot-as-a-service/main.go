@@ -83,6 +83,6 @@ func Action(context *cli.Context) error {
 	}()
 
 	http.Handle("/", s)
-	log.Printf("listening on %s:%d\n", address, port)
+	log.Printf("screenshot-as-a-service version %s\nlistening on %s:%d\n", Version, address, port)
 	return http.ListenAndServe(fmt.Sprintf("%s:%d", address, port), nil)
 }
