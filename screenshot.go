@@ -15,6 +15,7 @@ import (
 	"image/png"
 	"log"
 	"net/http"
+	"net/url"
 	"strconv"
 	"strings"
 	"time"
@@ -34,10 +35,19 @@ type Opts struct {
 	Password  string
 }
 
-func NewOpts(r *http.Request) *Opts {
+func NewOpts(r *http.Request) (*Opts, error) {
 	o := &Opts{}
 
-	o.Url = r.URL.Query().Get("url")
+	u, err := url.Parse(r.URL.Query().Get("url"))
+	if err != nil {
+		return nil, err
+	}
+
+	if u.Scheme == "" {
+		u.Scheme = "http"
+	}
+
+	o.Url = u.String()
 
 	if val, err := strconv.Atoi(r.URL.Query().Get("top")); err == nil {
 		o.Top = val
@@ -68,7 +78,7 @@ func NewOpts(r *http.Request) *Opts {
 	o.Username = r.URL.Query().Get("username")
 	o.Password = r.URL.Query().Get("password")
 
-	return o
+	return o, nil
 }
 
 type Screenshot struct {
@@ -116,7 +126,12 @@ func (s *Screenshot) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if r.URL.Path == "/" {
-		opts := NewOpts(r)
+		opts, err := NewOpts(r)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			_, _ = w.Write([]byte(err.Error()))
+			return
+		}
 
 		screenshot, err := s.getScreenshot(opts)
 		if err != nil {
@@ -208,7 +223,6 @@ func (s *Screenshot) getScreenshot(opts *Opts) ([]byte, error) {
 		return nil, fmt.Errorf("error: bad png: %v", err)
 	}
 
-	//clippedImage := image.NewRGBA(image.Rect(572, 40, 1372, 640))
 	if opts.Top != 0 || opts.Left != 0 {
 		clippedImage := image.NewRGBA(image.Rect(opts.Left, opts.Top, opts.Left+opts.Width, opts.Top+opts.Height))
 		draw.Draw(clippedImage, clippedImage.Rect, img, image.Point{X: opts.Top, Y: opts.Left}, draw.Src)
