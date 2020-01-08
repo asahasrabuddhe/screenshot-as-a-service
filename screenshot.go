@@ -10,6 +10,8 @@ import (
 	"github.com/mafredri/cdp/protocol/emulation"
 	"github.com/mafredri/cdp/protocol/network"
 	chrome "go.ajitem.com/gcf/v2"
+	"image"
+	"image/draw"
 	"image/png"
 	"log"
 	"net/http"
@@ -18,9 +20,11 @@ import (
 	"time"
 )
 
-//TODO: clipping, Callback
+//TODO: Callback
 type Opts struct {
 	Url       string
+	Top       int
+	Left      int
 	Width     int
 	Height    int
 	Delay     time.Duration
@@ -34,6 +38,14 @@ func NewOpts(r *http.Request) *Opts {
 	o := &Opts{}
 
 	o.Url = r.URL.Query().Get("url")
+
+	if val, err := strconv.Atoi(r.URL.Query().Get("top")); err == nil {
+		o.Top = val
+	}
+
+	if val, err := strconv.Atoi(r.URL.Query().Get("left")); err == nil {
+		o.Left = val
+	}
 
 	if val, err := strconv.Atoi(r.URL.Query().Get("height")); err == nil {
 		o.Height = val
@@ -125,8 +137,10 @@ func (s *Screenshot) getScreenshot(opts *Opts) ([]byte, error) {
 		opts.Height = s.Height
 	}
 
-	if opts.FullPage {
+	if opts.FullPage && (opts.Top == 0 || opts.Left == 0){
 		opts.Height = 0
+	} else {
+		opts.FullPage = false
 	}
 
 	if opts.Width == 0 {
@@ -173,7 +187,13 @@ func (s *Screenshot) getScreenshot(opts *Opts) ([]byte, error) {
 
 	time.Sleep(opts.Delay)
 
-	screenshot, err := tab.CaptureScreenshot(chrome.ScreenshotOpts{Width: opts.Width, Height: opts.Height}, 120*time.Second)
+	var screenshot string
+
+	if opts.Top != 0 || opts.Left != 0 {
+		screenshot, err = tab.CaptureScreenshot(chrome.ScreenshotOpts{Width: s.Width, Height: s.Height}, 120*time.Second)
+	} else {
+		screenshot, err = tab.CaptureScreenshot(chrome.ScreenshotOpts{Width: opts.Width, Height: opts.Height}, 120*time.Second)
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -183,14 +203,22 @@ func (s *Screenshot) getScreenshot(opts *Opts) ([]byte, error) {
 		return nil, fmt.Errorf("error: cannot decode base64 image: %v", err)
 	}
 
-	image, err := png.Decode(bytes.NewReader(rawImage))
+	img, err := png.Decode(bytes.NewReader(rawImage))
 	if err != nil {
 		return nil, fmt.Errorf("error: bad png: %v", err)
 	}
 
+	//clippedImage := image.NewRGBA(image.Rect(572, 40, 1372, 640))
+	if opts.Top != 0 || opts.Left != 0 {
+		clippedImage := image.NewRGBA(image.Rect(opts.Left, opts.Top, opts.Left+opts.Width, opts.Top+opts.Height))
+		draw.Draw(clippedImage, clippedImage.Rect, img, image.Point{X: opts.Top, Y: opts.Left}, draw.Src)
+
+		img = clippedImage
+	}
+
 	var buf bytes.Buffer
 
-	err = png.Encode(&buf, image)
+	err = png.Encode(&buf, img)
 	if err != nil {
 		return nil, err
 	}
@@ -208,14 +236,21 @@ func (s *Screenshot) getScreenshot(opts *Opts) ([]byte, error) {
 func (s *Screenshot) getLogLine(opts *Opts) string {
 	var builder strings.Builder
 
-	builder.WriteString(fmt.Sprint("captured screenshot for :: "))
+	builder.WriteString("captured screenshot for :: ")
 	builder.WriteString(fmt.Sprintf("url: %s ", opts.Url))
-	builder.WriteString(fmt.Sprintf("width: %d ", opts.Width))
-	builder.WriteString(fmt.Sprintf("height: %d ", opts.Height))
 
 	if opts.FullPage {
 		builder.WriteString(fmt.Sprintf("[full page screenshot] "))
 	}
+
+	if opts.Top > 0 || opts.Left > 0 {
+		builder.WriteString("[clipped screenshot] ")
+		builder.WriteString(fmt.Sprintf("top: %d ", opts.Top))
+		builder.WriteString(fmt.Sprintf("left: %d ", opts.Left))
+	}
+
+	builder.WriteString(fmt.Sprintf("width: %d ", opts.Width))
+	builder.WriteString(fmt.Sprintf("height: %d ", opts.Height))
 
 	if opts.Delay > 0 {
 		builder.WriteString(fmt.Sprintf("delay: %s ", opts.Delay))
