@@ -37,4 +37,8 @@ GET /?url=http://google.com&useragent=abc
 # Delay
 GET /?url=http://google.com&delay=5000
 ## Returns a 1920x1080 PNG screenshot of google.com after a delay of 5 seconds after the site is loaded
+
+# HTTP Authentication (Basic)
+GET /?url=http://www.example.com&username=user&password=pass
+## Returns a screenshot of a website that requires HTTP (Basic) Authentication
 ```
