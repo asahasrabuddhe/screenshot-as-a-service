@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"context"
 	"encoding/base64"
+	"encoding/json"
 	"fmt"
 	"github.com/mafredri/cdp"
 	"github.com/mafredri/cdp/protocol/emulation"
+	"github.com/mafredri/cdp/protocol/network"
 	chrome "go.ajitem.com/gcf/v2"
 	"image/png"
 	"log"
@@ -16,7 +18,7 @@ import (
 	"time"
 )
 
-//TODO: Useragent, clipping, HTTP Basic Auth, Callback
+//TODO: clipping, Callback
 type Opts struct {
 	Url       string
 	Width     int
@@ -24,6 +26,8 @@ type Opts struct {
 	Delay     time.Duration
 	UserAgent string
 	FullPage  bool
+	Username  string
+	Password  string
 }
 
 func NewOpts(r *http.Request) *Opts {
@@ -48,6 +52,9 @@ func NewOpts(r *http.Request) *Opts {
 	if r.URL.Query().Get("fullpage") == "true" {
 		o.FullPage = true
 	}
+
+	o.Username = r.URL.Query().Get("username")
+	o.Password = r.URL.Query().Get("password")
 
 	return o
 }
@@ -134,6 +141,28 @@ func (s *Screenshot) getScreenshot(opts *Opts) ([]byte, error) {
 	if opts.UserAgent != "" {
 		tab.AttachHook(func(c *cdp.Client) error {
 			return c.Emulation.SetUserAgentOverride(context.Background(), emulation.NewSetUserAgentOverrideArgs(opts.UserAgent))
+		})
+	}
+
+	if opts.Username != "" && opts.Password != "" {
+		tab.AttachHook(func(c *cdp.Client) error {
+			authHeader, err := json.Marshal(map[string]string{
+				"Authorization": fmt.Sprintf(
+					"Basic %s",
+					base64.StdEncoding.EncodeToString(
+						[]byte(fmt.Sprintf("%s:%s", opts.Username, opts.Password)),
+					)),
+			})
+			if err != nil {
+				return err
+			}
+
+			err = c.Network.Enable(context.Background(), network.NewEnableArgs())
+			if err != nil {
+				return err
+			}
+
+			return c.Network.SetExtraHTTPHeaders(context.Background(), network.NewSetExtraHTTPHeadersArgs(authHeader))
 		})
 	}
 
