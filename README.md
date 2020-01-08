@@ -30,6 +30,14 @@ GET /?url=http://google.com
 GET /?url=http://google.com&width=1366&height=768
 ## Returns a 1366x768 PNG screenshot of google.com
 
+# Take a full page screenshot
+GET /?url=http://google.com&fullpage=true
+## Returns a full page PNG screenshot of google.com
+
+# Take a clipped screenshot
+GET /?url=http://google.com&top=572&left=50&width=800&height=600
+## Returns a 800x600 PNG screenshot of google.com clipped at {"top": 572, "left": 50, "width": 800, "height": 600}
+
 # Custom useragent
 GET /?url=http://google.com&useragent=abc
 ## Returns a screenshot using customized useragent
